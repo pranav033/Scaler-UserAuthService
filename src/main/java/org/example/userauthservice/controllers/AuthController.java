@@ -4,6 +4,11 @@ import org.example.userauthservice.dtos.LoginRequestDto;
 import org.example.userauthservice.dtos.SignUpRequestDto;
 import org.example.userauthservice.dtos.UserDto;
 import org.example.userauthservice.dtos.ValidateTokenRequestDto;
+import org.example.userauthservice.models.User;
+import org.example.userauthservice.services.AuthService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,18 +19,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
 
+    @Autowired
+    private AuthService authService;
+
 //    signup
     @PostMapping("/signup")
     public ResponseEntity<UserDto> signup(@RequestBody SignUpRequestDto signUpRequestDto)
     {
-        return null;
+        User user = authService.signup(signUpRequestDto.getName(), signUpRequestDto.getEmail(), signUpRequestDto.getPassword(), signUpRequestDto.getPhoneNumber());
+        UserDto userDto = from(user);
+        return new ResponseEntity<>(userDto, HttpStatus.CREATED);
     }
 
 //    login
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody LoginRequestDto loginRequestDto)
     {
-        return null;
+        User user = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+        UserDto userDto = from(user);
+        return new ResponseEntity<>(userDto, HttpStatus.OK);
     }
 
 //    validatetoken
@@ -34,8 +46,17 @@ public class AuthController {
     {
         return null;
     }
-//    logout
-//    forgetpassword
+//    logout --TODO
+//    forgetpassword --TODO
+
+    UserDto from(User user)
+    {
+        UserDto userDto = new UserDto();
+        userDto.setEmail(user.getEmail());
+        userDto.setName(user.getName());
+        userDto.setId(user.getId());
+        return userDto;
+    }
 
 
 }
