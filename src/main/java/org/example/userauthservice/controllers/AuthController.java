@@ -1,5 +1,6 @@
 package org.example.userauthservice.controllers;
 
+import org.antlr.v4.runtime.misc.Pair;
 import org.example.userauthservice.dtos.LoginRequestDto;
 import org.example.userauthservice.dtos.SignUpRequestDto;
 import org.example.userauthservice.dtos.UserDto;
@@ -8,8 +9,11 @@ import org.example.userauthservice.models.User;
 import org.example.userauthservice.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,9 +39,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody LoginRequestDto loginRequestDto)
     {
-        User user = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
-        UserDto userDto = from(user);
-        return new ResponseEntity<>(userDto, HttpStatus.OK);
+        Pair<User,String> response = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+        UserDto userDto = from(response.a);
+        String token = response.b;
+        MultiValueMap headers = new LinkedMultiValueMap();
+        headers.add(HttpHeaders.SET_COOKIE,token);
+        return new ResponseEntity<>(userDto,headers,HttpStatus.OK);
     }
 
 //    validatetoken
