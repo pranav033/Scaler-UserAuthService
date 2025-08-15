@@ -1,5 +1,7 @@
 package org.example.userauthservice.services.impl;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.MacAlgorithm;
 import org.antlr.v4.runtime.misc.Pair;
@@ -7,6 +9,7 @@ import org.example.userauthservice.exceptions.PasswordMismatchException;
 import org.example.userauthservice.exceptions.UserAlreadyExistsException;
 import org.example.userauthservice.exceptions.UserNotSignedUpException;
 import org.example.userauthservice.models.Session;
+import org.example.userauthservice.models.SessionState;
 import org.example.userauthservice.models.Status;
 import org.example.userauthservice.models.User;
 import org.example.userauthservice.repositories.SessionRepo;
@@ -33,6 +36,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Autowired
+    private SecretKey secretKey;
 
     @Override
     public User signup(String name, String email, String password, String phonenumber) {
@@ -81,14 +87,14 @@ public class AuthServiceImpl implements AuthService {
         claims.put("gen",currentTimeMillis);
         claims.put("exp",currentTimeMillis+1234567890);
         claims.put("scope",user.getRoles());
-        MacAlgorithm algorithm = Jwts.SIG.HS256;
-        SecretKey secretKey = algorithm.key().build();
+//        MacAlgorithm algorithm = Jwts.SIG.HS256;
+//        SecretKey secretKey = algorithm.key().build();
         String token = Jwts.builder().claims(claims).signWith(secretKey).compact();
 
         Session session = new Session();
         session.setToken(token);
         session.setUser(user);
-        session.setStatus(Status.ACTIVE);
+        session.setSessionState(SessionState.ACTIVE);
         sessionRepo.save(session);
 
         return new Pair<User,String>(user,token);
@@ -96,6 +102,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Boolean validateToken(String token, Long userID) {
-        return null;
+        Optional<Session> sessionOptional = sessionRepo.findByTokenAndUser_Id(token, userID);
+        // Check if session exists for the given token and user ID
+        if (sessionOptional.isPresent()) {
+            Session session = sessionOptional.get();
+            JwtParser jwtParser = Jwts.parser().verifyWith(secretKey).build();
+            Claims claims = jwtParser.parseSignedClaims(token).getPayload();
+            Long exp = claims.get("exp", Long.class);
+            long currentTimeMillis = System.currentTimeMillis();
+            System.out.println("Current Time: " + currentTimeMillis);
+            System.out.println("Expiration Time: " + exp);
+            if (exp < currentTimeMillis) {
+                session.setSessionState(SessionState.INACTIVE);
+                sessionRepo.save(session);
+                return false;
+            }
+            return true;
+        }
+        return false;
+
     }
+
+
 }

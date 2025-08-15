@@ -1,23 +1,16 @@
 package org.example.userauthservice.controllers;
 
 import org.antlr.v4.runtime.misc.Pair;
-import org.example.userauthservice.dtos.LoginRequestDto;
-import org.example.userauthservice.dtos.SignUpRequestDto;
-import org.example.userauthservice.dtos.UserDto;
-import org.example.userauthservice.dtos.ValidateTokenRequestDto;
+import org.example.userauthservice.dtos.*;
 import org.example.userauthservice.models.User;
 import org.example.userauthservice.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -51,7 +44,8 @@ public class AuthController {
     @PostMapping("/validatetoken")
     public ResponseEntity<Boolean> validateToke(@RequestBody ValidateTokenRequestDto validateTokenRequestDto)
     {
-        return null;
+        Boolean validatedToken = authService.validateToken(validateTokenRequestDto.getToken(), validateTokenRequestDto.getUserId());
+        return new ResponseEntity<>(validatedToken, HttpStatus.OK);
     }
 //    logout --TODO
 //    forgetpassword --TODO
